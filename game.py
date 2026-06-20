@@ -65,6 +65,8 @@ def play_human_turn(s: dict, sound: Sound, input_func, output,
         # Selection sub-loop within this roll: keep at least one scoring die
         kept_this_roll: List[int] = []
         remaining = list(roll)
+        invalid_attempts = 0
+        max_invalid_attempts = 10
         while True:
             try:
                 line = input_func(t(lang, "input_keep"))
@@ -114,11 +116,22 @@ def play_human_turn(s: dict, sound: Sound, input_func, output,
                 continue
             keep = parse_keep(line)
             if keep is None:
+                invalid_attempts += 1
                 write(t(lang, "invalid_keep"))
+                if invalid_attempts >= max_invalid_attempts:
+                    write(t(lang, "too_many_invalid"))
+                    sound.farkle()
+                    return 0
                 continue
             if not farkle_mod.can_keep(remaining, keep):
+                invalid_attempts += 1
                 write(t(lang, "invalid_keep"))
+                if invalid_attempts >= max_invalid_attempts:
+                    write(t(lang, "too_many_invalid"))
+                    sound.farkle()
+                    return 0
                 continue
+            invalid_attempts = 0
             sc, _ = farkle_mod.score_dice(keep)
             kept_this_roll.extend(keep)
             round_score += sc
